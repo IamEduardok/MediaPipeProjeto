@@ -13,9 +13,9 @@ const drawCanvas = document.getElementById("draw-canvas");
 const drawCtx = drawCanvas.getContext("2d");
 const threeCanvasContainer = document.getElementById("three-canvas");
 
-// --------------------------------------------------------------------
+
 // Layout dos anéis (posiciona os botões em arco ao redor do hub)
-// --------------------------------------------------------------------
+
 function layoutRing(ringEl, radius, startDeg, endDeg) {
   const items = ringEl.querySelectorAll(".circle-btn");
   const n = items.length;
@@ -32,9 +32,9 @@ function layoutRing(ringEl, radius, startDeg, endDeg) {
 layoutRing(ringMain, 90, 200, 340);   // arco abaixo do hub, 2 itens
 layoutRing(ringTools, 110, 200, 340); // arco abaixo do hub, 4 itens
 
-// --------------------------------------------------------------------
+
 // Estado
-// --------------------------------------------------------------------
+
 let mode = "launcher";   // "launcher" | "create"
 let tool = "draw";       // "draw" | "box" | "sphere" | "cylinder"
 let currentColor = "#2563eb";
@@ -88,9 +88,9 @@ colorRow.querySelectorAll(".color-swatch").forEach((btn) => {
   });
 });
 
-// --------------------------------------------------------------------
+
 // Canvas de desenho
-// --------------------------------------------------------------------
+
 function resizeCanvas() {
   drawCanvas.width = window.innerWidth;
   drawCanvas.height = window.innerHeight;
@@ -115,9 +115,9 @@ function drawTo(x, y) {
   lastPoint = { x, y };
 }
 
-// --------------------------------------------------------------------
+
 // Cena 3D — material sem luz (cor sempre cheia) + redimensionar com 2 mãos
-// --------------------------------------------------------------------
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.z = 4;
@@ -168,9 +168,9 @@ function animate() {
 }
 animate();
 
-// --------------------------------------------------------------------
+
 // Launcher — cards com ícone (imagem) e fallback pro nome em texto
-// --------------------------------------------------------------------
+
 let launcherItems = [];
 
 async function loadLauncherItems() {
@@ -203,11 +203,11 @@ function makeLabel(text) {
 }
 loadLauncherItems();
 
-// --------------------------------------------------------------------
+
 // Interação por gesto: hover + Pinca (uma mão) "clica" em QUALQUER
-// elemento .hand-clickable visível na tela — botões do menu, cores,
-// itens do launcher, tudo pelo mesmo mecanismo.
-// --------------------------------------------------------------------
+// elemento .hand-clickable visível na tela — botões do menu, cores
+// itens do launcher, tudo pelo mesmo mecanismo
+
 function updateHoveredClickable(clientX, clientY) {
   const elements = document.querySelectorAll(".hand-clickable");
   let found = null;
@@ -227,9 +227,9 @@ function updateHoveredClickable(clientX, clientY) {
   return found;
 }
 
-// --------------------------------------------------------------------
+
 // Bridge WebSocket
-// --------------------------------------------------------------------
+
 function connect() {
   const ws = new WebSocket("ws://localhost:8765");
 

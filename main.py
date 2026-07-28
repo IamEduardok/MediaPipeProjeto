@@ -57,9 +57,8 @@ FINGER_TIP_PIP = {
 }
 
 
-# --------------------------------------------------------------------------
+
 # Servidor WebSocket (eventos de gesto/posição)
-# --------------------------------------------------------------------------
 _clients = set()
 _clients_lock = threading.Lock()
 
@@ -98,9 +97,9 @@ def start_ws_server() -> None:
         server.serve_forever()
 
 
-# --------------------------------------------------------------------------
-# Servidor MJPEG (streaming da câmera pro Electron usar como fundo)
-# --------------------------------------------------------------------------
+
+# Servidor MJPEG 
+
 _frame_lock = threading.Lock()
 _latest_jpeg: Optional[bytes] = None
 
@@ -149,9 +148,9 @@ def start_mjpeg_server() -> None:
     server.serve_forever()
 
 
-# --------------------------------------------------------------------------
+
 # Visão computacional + classificação de gestos (igual à Fase 5)
-# --------------------------------------------------------------------------
+
 def ensure_model() -> None:
     if not os.path.exists(MODEL_PATH):
         print("Modelo não encontrado. Baixando hand_landmarker.task (~12 MB)...")

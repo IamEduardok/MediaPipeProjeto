@@ -47,7 +47,7 @@
           line.textContent = `[${data.hand}] gesto: ${data.gesture}`;
           logEl.prepend(line);
         }
-        // eventos de "position" chegam a cada frame — não logamos pra não poluir,
+        // eventos de "position" chegam a cada frame  não logamos pra não poluir,
         // mas dá pra usar data.x / data.y aqui pra mover algo na tela em tempo real.
 
         while (logEl.children.length > 50) {
