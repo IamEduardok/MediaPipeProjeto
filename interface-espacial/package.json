@@ -1,0 +1,12 @@
+{
+  "name": "interface-espacial-maos",
+  "version": "0.1.0",
+  "description": "Interface espacial para Windows controlada por gestos de mao (Fase 6 - launcher)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}

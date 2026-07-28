@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Interface Espacial - Fase 10</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: system-ui, sans-serif; }
+
+  #camera-feed {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 0; opacity: 0.9;
+  }
+
+  #draw-canvas { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
+  #three-canvas { position: absolute; inset: 0; z-index: 6; pointer-events: none; display: none; }
+  #three-canvas.visible { display: block; }
+
+  /* --- Menu circular --- */
+  .circle-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.96); border: 2px solid transparent;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    transition: all 0.12s ease; user-select: none;
+  }
+  .circle-btn.hovered { border-color: #ff5533; transform: scale(1.12); }
+  .circle-btn.active { background: #2563eb; color: #fff; }
+
+  #radial-hub {
+    position: absolute; top: 18px; left: 50%; transform: translateX(-28px);
+    z-index: 27;
+  }
+  #status-dot {
+    position: absolute; top: 4px; right: 4px; width: 10px; height: 10px;
+    border-radius: 50%; background: #f44; border: 2px solid #fff;
+  }
+  #status-dot.online { background: #22c55e; }
+
+  .radial-ring { position: absolute; top: 96px; left: 50%; width: 0; height: 0; z-index: 26; }
+  .radial-ring .circle-btn { position: absolute; }
+
+  #ring-main.hidden, #ring-tools.hidden, #color-row.hidden { display: none; }
+
+  #color-row {
+    position: absolute; top: 96px; left: 50%; transform: translateX(-50%);
+    z-index: 26; display: flex; gap: 10px;
+    padding: 10px 14px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  #ring-tools ~ #color-row { top: 170px; }
+
+  .color-swatch {
+    width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); cursor: pointer;
+  }
+  .color-swatch.hovered { border-color: #ff5533; transform: scale(1.15); }
+  .color-swatch.active { box-shadow: 0 0 0 3px #2563eb; }
+
+  #cursor {
+    position: absolute; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0, 200, 255, 0.85); pointer-events: none;
+    transform: translate(-50%, -50%); z-index: 30;
+    box-shadow: 0 0 12px rgba(0, 200, 255, 0.8); transition: background 0.1s ease;
+  }
+  #cursor.selecting { background: rgba(255, 85, 51, 0.9); box-shadow: 0 0 16px rgba(255, 85, 51, 0.9); }
+
+  .panel {
+    position: absolute; inset: 0; top: 56px; z-index: 15;
+    display: none; align-items: center; justify-content: center;
+  }
+  .panel.visible { display: flex; }
+
+  .item-grid { display: grid; grid-template-columns: repeat(3, 160px); gap: 24px; }
+
+  .item-card {
+    width: 160px; height: 130px; border-radius: 12px;
+    background: rgba(34, 37, 43, 0.9); border: 2px solid #333;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    color: #eee; text-align: center; padding: 10px; box-sizing: border-box;
+    font-size: 14px; transition: all 0.12s ease;
+  }
+  .item-card.hovered { background: #3a4a6b; border-color: #00aaff; transform: scale(1.08); }
+  .item-card img { width: 48px; height: 48px; object-fit: contain; }
+</style>
+</head>
+<body>
+  <img id="camera-feed" src="http://localhost:8766/stream" alt="camera">
+  <canvas id="draw-canvas"></canvas>
+  <div id="three-canvas"></div>
+
+  <div id="radial-hub" class="circle-btn hand-clickable" title="Menu">☰<div id="status-dot"></div></div>
+
+  <div id="ring-main" class="radial-ring hidden">
+    <button class="circle-btn hand-clickable" data-mode="launcher" title="Launcher">🗂️</button>
+    <button class="circle-btn hand-clickable" data-mode="create" title="Criar">✏️</button>
+  </div>
+
+  <div id="ring-tools" class="radial-ring hidden">
+    <button class="circle-btn hand-clickable" data-tool="draw" title="Linha">✏️</button>
+    <button class="circle-btn hand-clickable" data-tool="box" title="Cubo">⬛</button>
+    <button class="circle-btn hand-clickable" data-tool="sphere" title="Esfera">⚪</button>
+    <button class="circle-btn hand-clickable" data-tool="cylinder" title="Cilindro">🥫</button>
+  </div>
+
+  <div id="color-row" class="hidden">
+    <button class="color-swatch hand-clickable" data-color="#2563eb" style="background:#2563eb"></button>
+    <button class="color-swatch hand-clickable" data-color="#111111" style="background:#111111"></button>
+    <button class="color-swatch hand-clickable" data-color="#ffffff" style="background:#ffffff"></button>
+    <button class="color-swatch hand-clickable" data-color="#22c55e" style="background:#22c55e"></button>
+    <button class="color-swatch hand-clickable" data-color="#ef4444" style="background:#ef4444"></button>
+    <button class="color-swatch hand-clickable" data-color="#eab308" style="background:#eab308"></button>
+  </div>
+
+  <div id="cursor"></div>
+
+  <div id="launcher-panel" class="panel">
+    <div id="launcher-grid" class="item-grid"></div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.165.0/build/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="renderer.js"></script>
+</body>
+</html>

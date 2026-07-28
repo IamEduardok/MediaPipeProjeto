@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Teste WebSocket - Hand Tracking</title>
+<style>
+  body { font-family: monospace; background: #1e1e1e; color: #ddd; padding: 20px; }
+  #status { font-weight: bold; margin-bottom: 10px; }
+  .connected { color: #4caf50; }
+  .disconnected { color: #f44336; }
+  #gesture-log { border: 1px solid #444; padding: 10px; height: 300px; overflow-y: auto; }
+  .gesture-event { color: #ffc107; }
+  .position-event { color: #666; font-size: 0.85em; }
+</style>
+</head>
+<body>
+  <h2>Teste do bridge WebSocket</h2>
+  <div id="status" class="disconnected">Desconectado</div>
+  <div id="gesture-log"></div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("gesture-log");
+
+    function connect() {
+      const ws = new WebSocket("ws://localhost:8765");
+
+      ws.onopen = () => {
+        statusEl.textContent = "Conectado";
+        statusEl.className = "connected";
+      };
+
+      ws.onclose = () => {
+        statusEl.textContent = "Desconectado - tentando reconectar...";
+        statusEl.className = "disconnected";
+        setTimeout(connect, 1500);
+      };
+
+      ws.onerror = () => ws.close();
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const line = document.createElement("div");
+
+        if (data.type === "gesture") {
+          line.className = "gesture-event";
+          line.textContent = `[${data.hand}] gesto: ${data.gesture}`;
+          logEl.prepend(line);
+        }
+        // eventos de "position" chegam a cada frame — não logamos pra não poluir,
+        // mas dá pra usar data.x / data.y aqui pra mover algo na tela em tempo real.
+
+        while (logEl.children.length > 50) {
+          logEl.removeChild(logEl.lastChild);
+        }
+      };
+    }
+
+    connect();
+  </script>
+</body>
+</html>

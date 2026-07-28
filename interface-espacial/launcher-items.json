@@ -1,0 +1,6 @@
+[
+  { "name": "Bloco de Notas", "type": "app", "target": "notepad.exe", "icon": "icons/notepad.png" },
+  { "name": "Calculadora", "type": "app", "target": "calc.exe", "icon": "icons/calculator.png" },
+  { "name": "Downloads", "type": "path", "target": "%USERPROFILE%\\Downloads", "icon": "icons/folder.png" },
+  { "name": "Área de Trabalho", "type": "path", "target": "%USERPROFILE%\\Desktop", "icon": "icons/desktop.png" }
+]
