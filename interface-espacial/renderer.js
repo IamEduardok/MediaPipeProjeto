@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { CSS3DRenderer, CSS3DObject } from "three/addons/renderers/CSS3DRenderer.js";
 
 const statusDot = document.getElementById("status-dot");
 const cursorEl = document.getElementById("cursor");
@@ -8,14 +9,20 @@ const ringTools = document.getElementById("ring-tools");
 const colorRow = document.getElementById("color-row");
 const launcherPanel = document.getElementById("launcher-panel");
 const launcherGridEl = document.getElementById("launcher-grid");
+const browserCardEl = document.getElementById("browser-card");
+const browserUrl = document.getElementById("browser-url");
+const browserGo = document.getElementById("browser-go");
+const browserBack = document.getElementById("browser-back");
+const webview = document.getElementById("webview");
 
 const drawCanvas = document.getElementById("draw-canvas");
 const drawCtx = drawCanvas.getContext("2d");
 const threeCanvasContainer = document.getElementById("three-canvas");
+const css3dContainer = document.getElementById("css3d-container");
 
-
+// --------------------------------------------------------------------
 // Layout dos anéis (posiciona os botões em arco ao redor do hub)
-
+// --------------------------------------------------------------------
 function layoutRing(ringEl, radius, startDeg, endDeg) {
   const items = ringEl.querySelectorAll(".circle-btn");
   const n = items.length;
@@ -29,23 +36,42 @@ function layoutRing(ringEl, radius, startDeg, endDeg) {
     el.style.top = `${y - 28}px`;
   });
 }
-layoutRing(ringMain, 90, 200, 340);   // arco abaixo do hub, 2 itens
-layoutRing(ringTools, 110, 200, 340); // arco abaixo do hub, 4 itens
+layoutRing(ringMain, 100, 190, 350);
+layoutRing(ringTools, 110, 200, 340);
 
-
+// --------------------------------------------------------------------
 // Estado
-
-let mode = "launcher";   // "launcher" | "create"
+// --------------------------------------------------------------------
+let mode = "launcher";   // "launcher" | "create" | "browser"
 let tool = "draw";       // "draw" | "box" | "sphere" | "cylinder"
 let currentColor = "#2563eb";
 let radialOpen = false;
 let isPinching = false;
 let isDrawing = false;
 let lastPoint = null;
+let dragLastNorm = null;
 const handPositions = { Left: null, Right: null };
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+// "Objeto flutuante ativo": pode ser uma forma 3D (Mesh) ou o card do
+// navegador (CSS3DObject) — os dois têm position/rotation/scale, então a
+// mesma lógica de arrastar/girar/redimensionar serve pra qualquer um.
+function getActiveObject() {
+  if (mode === "create" && tool !== "draw") return currentShape;
+  if (mode === "browser") return browserObject;
+  return null;
+}
+
+function getActiveBaseScale() {
+  return mode === "browser" ? BROWSER_BASE_SCALE : 1;
+}
 
 function updateThreeVisibility() {
   threeCanvasContainer.classList.toggle("visible", mode === "create" && tool !== "draw" && currentShape !== null);
+  css3dContainer.classList.toggle("visible", mode === "browser");
 }
 
 function setMode(newMode) {
@@ -65,6 +91,22 @@ function setTool(newTool) {
   if (tool !== "draw" && currentShapeType !== tool) rebuildShape(tool);
   updateThreeVisibility();
 }
+
+function normalizeUrl(value) {
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.includes(".") && !trimmed.includes(" ")) return `https://${trimmed}`;
+  return `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`;
+}
+
+function navigateBrowser() {
+  webview.src = normalizeUrl(browserUrl.value);
+}
+
+browserGo.addEventListener("click", navigateBrowser);
+browserUrl.addEventListener("keydown", (e) => { if (e.key === "Enter") navigateBrowser(); });
+browserBack.addEventListener("click", () => { if (webview.canGoBack()) webview.goBack(); });
+webview.addEventListener("did-navigate", () => { browserUrl.value = webview.src; });
 
 radialHub.addEventListener("click", () => {
   radialOpen = !radialOpen;
@@ -88,9 +130,9 @@ colorRow.querySelectorAll(".color-swatch").forEach((btn) => {
   });
 });
 
-
+// --------------------------------------------------------------------
 // Canvas de desenho
-
+// --------------------------------------------------------------------
 function resizeCanvas() {
   drawCanvas.width = window.innerWidth;
   drawCanvas.height = window.innerHeight;
@@ -115,9 +157,9 @@ function drawTo(x, y) {
   lastPoint = { x, y };
 }
 
-
-// Cena 3D — material sem luz (cor sempre cheia) + redimensionar com 2 mãos
-
+// --------------------------------------------------------------------
+// Cena 3D (WebGL) — formas geométricas
+// --------------------------------------------------------------------
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.z = 4;
@@ -126,12 +168,6 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setClearColor(0x000000, 0);
 renderer.setSize(window.innerWidth, window.innerHeight);
 threeCanvasContainer.appendChild(renderer.domElement);
-
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
 
 const SHAPE_GEOMETRIES = {
   box: () => new THREE.BoxGeometry(1, 1, 1),
@@ -154,23 +190,41 @@ function rebuildShape(shapeType) {
   currentShapeType = shapeType;
 }
 
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
+// --------------------------------------------------------------------
+// Cena CSS3D — o card do navegador como objeto 3D "de verdade" (o DOM
+// real do webview é transformado em 3D via CSS, continua clicável)
+// --------------------------------------------------------------------
+const cssScene = new THREE.Scene();
+const cssRenderer = new CSS3DRenderer();
+cssRenderer.setSize(window.innerWidth, window.innerHeight);
+css3dContainer.appendChild(cssRenderer.domElement);
+
+// O card tem 800x520px reais; essa escala converte pixels de CSS em
+// unidades da nossa cena (pequena, câmera a 4 unidades de distância).
+const BROWSER_BASE_SCALE = 0.0032;
+
+browserCardEl.style.display = "flex"; // volta a ficar visível (controlado pelo container, não por ele mesmo)
+const browserObject = new CSS3DObject(browserCardEl);
+browserObject.scale.setScalar(BROWSER_BASE_SCALE);
+cssScene.add(browserObject);
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  cssRenderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 function animate() {
   requestAnimationFrame(animate);
-  if (currentShape && !isPinching) {
-    currentShape.rotation.y += 0.006;
-    currentShape.rotation.x += 0.002;
-  }
   renderer.render(scene, camera);
+  cssRenderer.render(cssScene, camera);
 }
 animate();
 
-
+// --------------------------------------------------------------------
 // Launcher — cards com ícone (imagem) e fallback pro nome em texto
-
+// --------------------------------------------------------------------
 let launcherItems = [];
 
 async function loadLauncherItems() {
@@ -203,17 +257,15 @@ function makeLabel(text) {
 }
 loadLauncherItems();
 
-
+// --------------------------------------------------------------------
 // Interação por gesto: hover + Pinca (uma mão) "clica" em QUALQUER
-// elemento .hand-clickable visível na tela — botões do menu, cores
-// itens do launcher, tudo pelo mesmo mecanismo
-
+// elemento .hand-clickable visível na tela.
+// --------------------------------------------------------------------
 function updateHoveredClickable(clientX, clientY) {
   const elements = document.querySelectorAll(".hand-clickable");
   let found = null;
   elements.forEach((el) => {
-    const style = window.getComputedStyle(el);
-    if (style.display === "none" || el.closest(".hidden")) {
+    if (el.offsetParent === null) {
       el.classList.remove("hovered");
       return;
     }
@@ -227,9 +279,9 @@ function updateHoveredClickable(clientX, clientY) {
   return found;
 }
 
-
+// --------------------------------------------------------------------
 // Bridge WebSocket
-
+// --------------------------------------------------------------------
 function connect() {
   const ws = new WebSocket("ws://localhost:8765");
 
@@ -247,13 +299,14 @@ function connect() {
       handPositions[data.hand] = { x: data.x, y: data.y };
 
       // Redimensionar com as duas mãos: distância entre elas vira a escala
-      // da forma atual. Só é considerado quando as duas mãos estão visíveis
-      // ao mesmo tempo e não depende de pinça nenhuma.
-      if (mode === "create" && tool !== "draw" && currentShape && handPositions.Left && handPositions.Right) {
+      // do objeto flutuante ativo (forma 3D ou card do navegador).
+      const active = getActiveObject();
+      if (active && handPositions.Left && handPositions.Right) {
         const dx = handPositions.Left.x - handPositions.Right.x;
         const dy = handPositions.Left.y - handPositions.Right.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        currentShape.scale.setScalar(clamp(dist * 3.2, 0.3, 3.2));
+        const factor = clamp(dist * 3.2, 0.3, 3.2);
+        active.scale.setScalar(getActiveBaseScale() * factor);
       }
 
       if (data.hand === "Right") {
@@ -266,11 +319,18 @@ function connect() {
 
         if (mode === "create" && tool === "draw" && isDrawing) {
           drawTo(x, y);
-        } else if (mode === "create" && tool !== "draw" && currentShape && isPinching) {
+        } else if (active && isPinching) {
           const hoveredUi = document.querySelector(".hand-clickable.hovered");
-          if (!hoveredUi) {
-            currentShape.position.x = (data.x - 0.5) * 4.5;
-            currentShape.position.y = (0.5 - data.y) * 3.2;
+          if (hoveredUi) {
+            dragLastNorm = null;
+          } else {
+            if (dragLastNorm) {
+              active.rotation.y += (data.x - dragLastNorm.x) * 6;
+              active.rotation.x += (data.y - dragLastNorm.y) * 6;
+            }
+            dragLastNorm = { x: data.x, y: data.y };
+            active.position.x = (data.x - 0.5) * 4.5;
+            active.position.y = (0.5 - data.y) * 3.2;
           }
         }
       }
@@ -279,6 +339,8 @@ function connect() {
     if (data.type === "gesture" && data.hand === "Right") {
       isPinching = data.gesture === "Pinca";
       cursorEl.classList.toggle("selecting", isPinching);
+
+      if (!isPinching) dragLastNorm = null;
 
       if (isPinching) {
         const hovered = document.querySelector(".hand-clickable.hovered");

@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Interface Espacial - Fase 10</title>
+<title>Interface Espacial - Fase 12</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: system-ui, sans-serif; }
 
@@ -81,18 +81,46 @@
   }
   .item-card.hovered { background: #3a4a6b; border-color: #00aaff; transform: scale(1.08); }
   .item-card img { width: 48px; height: 48px; object-fit: contain; }
+
+  #browser-panel { top: 0; flex-direction: column; align-items: stretch; }
+
+  #css3d-container {
+    position: absolute; inset: 0; z-index: 9; pointer-events: none;
+    display: none; overflow: hidden;
+  }
+  #css3d-container.visible { display: block; }
+
+  #browser-card {
+    width: 800px; height: 520px;
+    background: #1c1c1c; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    display: flex; flex-direction: column;
+    pointer-events: auto;
+  }
+  #browser-bar { display: flex; gap: 8px; align-items: center; padding: 10px; background: #222; }
+  #browser-url {
+    flex: 1; padding: 10px 14px; border-radius: 999px; border: none;
+    font-size: 14px; background: rgba(255, 255, 255, 0.96);
+  }
+  #browser-go, #browser-back {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: rgba(255, 255, 255, 0.96); cursor: pointer; font-size: 15px; flex-shrink: 0;
+  }
+  #webview { flex: 1; width: 100%; border: none; }
 </style>
 </head>
 <body>
   <img id="camera-feed" src="http://localhost:8766/stream" alt="camera">
   <canvas id="draw-canvas"></canvas>
   <div id="three-canvas"></div>
+  <div id="css3d-container"></div>
 
   <div id="radial-hub" class="circle-btn hand-clickable" title="Menu">☰<div id="status-dot"></div></div>
 
   <div id="ring-main" class="radial-ring hidden">
     <button class="circle-btn hand-clickable" data-mode="launcher" title="Launcher">🗂️</button>
     <button class="circle-btn hand-clickable" data-mode="create" title="Criar">✏️</button>
+    <button class="circle-btn hand-clickable" data-mode="browser" title="Navegador">🌐</button>
   </div>
 
   <div id="ring-tools" class="radial-ring hidden">
@@ -117,10 +145,20 @@
     <div id="launcher-grid" class="item-grid"></div>
   </div>
 
+  <div id="browser-card" style="display:none">
+    <div id="browser-bar">
+      <button id="browser-back" class="hand-clickable" title="Voltar">⬅️</button>
+      <input id="browser-url" type="text" value="https://www.google.com" placeholder="Digite um endereço...">
+      <button id="browser-go" class="hand-clickable" title="Ir">➡️</button>
+    </div>
+    <webview id="webview" src="https://www.google.com"></webview>
+  </div>
+
   <script type="importmap">
   {
     "imports": {
-      "three": "https://unpkg.com/three@0.165.0/build/three.module.js"
+      "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
     }
   }
   </script>

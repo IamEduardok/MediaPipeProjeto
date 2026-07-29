@@ -12,6 +12,7 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      webviewTag: true,
       preload: path.join(__dirname, "preload.js"),
     },
   });
@@ -30,14 +31,15 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-// --- IPC: lista os itens do launcher a partir do JSON local ---
+//  IPC lista os itens do launcher a partir do JSON local
 ipcMain.handle("launcher:get-items", async () => {
   const itemsPath = path.join(__dirname, "launcher-items.json");
   const raw = fs.readFileSync(itemsPath, "utf-8");
   return JSON.parse(raw);
 });
 
-// --- IPC: abre um app ou uma pasta/arquivo ---
+//IPC abre um app ou uma pasta/arquivo
+
 ipcMain.handle("launcher:open-item", async (_event, item) => {
   try {
     const target = String(item.target).replace(/%USERPROFILE%/gi, os.homedir());

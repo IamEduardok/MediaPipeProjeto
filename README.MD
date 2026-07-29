@@ -143,7 +143,7 @@ Experimental, em desenvolvimento ativo. Ainda não há:
 
 ## Aviso
 
-Este projeto não substitui mouse, teclado ou ferramentas CAD — é uma exploração de interação espacial acessível, local-first, sem depender de headset ou sensores proprietários.
+Este projeto não substitui mouse, teclado ou ferramentas CAD é uma exploração de interação espacial acessível, local-first, sem depender de headset ou sensores proprietários.
 
 
 <p align="center">
