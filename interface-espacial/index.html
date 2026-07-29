@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Interface Espacial - Fase 12</title>
+<title>Interface Espacial - Fase 13</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: system-ui, sans-serif; }
 
@@ -14,75 +14,6 @@
   #draw-canvas { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
   #three-canvas { position: absolute; inset: 0; z-index: 6; pointer-events: none; display: none; }
   #three-canvas.visible { display: block; }
-
-  /* --- Menu circular --- */
-  .circle-btn {
-    width: 56px; height: 56px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.96); border: 2px solid transparent;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-    transition: all 0.12s ease; user-select: none;
-  }
-  .circle-btn.hovered { border-color: #ff5533; transform: scale(1.12); }
-  .circle-btn.active { background: #2563eb; color: #fff; }
-
-  #radial-hub {
-    position: absolute; top: 18px; left: 50%; transform: translateX(-28px);
-    z-index: 27;
-  }
-  #status-dot {
-    position: absolute; top: 4px; right: 4px; width: 10px; height: 10px;
-    border-radius: 50%; background: #f44; border: 2px solid #fff;
-  }
-  #status-dot.online { background: #22c55e; }
-
-  .radial-ring { position: absolute; top: 96px; left: 50%; width: 0; height: 0; z-index: 26; }
-  .radial-ring .circle-btn { position: absolute; }
-
-  #ring-main.hidden, #ring-tools.hidden, #color-row.hidden { display: none; }
-
-  #color-row {
-    position: absolute; top: 96px; left: 50%; transform: translateX(-50%);
-    z-index: 26; display: flex; gap: 10px;
-    padding: 10px 14px; border-radius: 999px;
-    background: rgba(255, 255, 255, 0.9); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  }
-  #ring-tools ~ #color-row { top: 170px; }
-
-  .color-swatch {
-    width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); cursor: pointer;
-  }
-  .color-swatch.hovered { border-color: #ff5533; transform: scale(1.15); }
-  .color-swatch.active { box-shadow: 0 0 0 3px #2563eb; }
-
-  #cursor {
-    position: absolute; width: 18px; height: 18px; border-radius: 50%;
-    background: rgba(0, 200, 255, 0.85); pointer-events: none;
-    transform: translate(-50%, -50%); z-index: 30;
-    box-shadow: 0 0 12px rgba(0, 200, 255, 0.8); transition: background 0.1s ease;
-  }
-  #cursor.selecting { background: rgba(255, 85, 51, 0.9); box-shadow: 0 0 16px rgba(255, 85, 51, 0.9); }
-
-  .panel {
-    position: absolute; inset: 0; top: 56px; z-index: 15;
-    display: none; align-items: center; justify-content: center;
-  }
-  .panel.visible { display: flex; }
-
-  .item-grid { display: grid; grid-template-columns: repeat(3, 160px); gap: 24px; }
-
-  .item-card {
-    width: 160px; height: 130px; border-radius: 12px;
-    background: rgba(34, 37, 43, 0.9); border: 2px solid #333;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-    color: #eee; text-align: center; padding: 10px; box-sizing: border-box;
-    font-size: 14px; transition: all 0.12s ease;
-  }
-  .item-card.hovered { background: #3a4a6b; border-color: #00aaff; transform: scale(1.08); }
-  .item-card img { width: 48px; height: 48px; object-fit: contain; }
-
-  #browser-panel { top: 0; flex-direction: column; align-items: stretch; }
 
   #css3d-container {
     position: absolute; inset: 0; z-index: 9; pointer-events: none;
@@ -107,6 +38,89 @@
     background: rgba(255, 255, 255, 0.96); cursor: pointer; font-size: 15px; flex-shrink: 0;
   }
   #webview { flex: 1; width: 100%; border: none; }
+
+  /* --- Badges de status, cantos superiores --- */
+  .status-badge {
+    position: absolute; top: 16px; z-index: 25;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    font-size: 13px; color: #333;
+  }
+  #tracking-badge { left: 16px; }
+  #fps-badge { right: 16px; }
+  #tracking-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #ef4444;
+  }
+  #tracking-dot.online { background: #22c55e; }
+
+  /* --- Navbar inferior --- */
+  #navbar {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 25; display: flex; gap: 6px; padding: 10px;
+    border-radius: 20px; background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 10px 16px; border-radius: 14px; cursor: pointer;
+    background: transparent; border: none; transition: background 0.12s ease;
+  }
+  .nav-item:hover, .nav-item.hovered { background: #e2e2e2; }
+  .nav-item.active { background: #d6d6d6; }
+  .nav-item img { width: 22px; height: 22px; object-fit: contain; }
+  .nav-item .fallback-icon { font-size: 20px; line-height: 1; }
+  .nav-item span.label { font-size: 11px; color: #444; }
+
+  /*  Sub-painel de ferramentas (aparece acima da navbar em certos modos)  */
+  #sub-panel {
+    position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%);
+    z-index: 24; display: none; align-items: center; gap: 10px;
+    padding: 10px 16px; border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  }
+  #sub-panel.visible { display: flex; }
+  #sub-panel.hidden-content > * { display: none; }
+
+  .tool-btn {
+    background: #eee; color: #333; border: none;
+    padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
+  }
+  .tool-btn.hovered { background: #ccc; }
+  .tool-btn.active { background: #2563eb; color: #fff; }
+
+  .color-swatch {
+    width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); cursor: pointer;
+  }
+  .color-swatch.hovered { border-color: #999; }
+  .color-swatch.active { box-shadow: 0 0 0 3px #2563eb; }
+
+  #cursor {
+    position: absolute; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0, 200, 255, 0.85); pointer-events: none;
+    transform: translate(-50%, -50%); z-index: 30;
+    box-shadow: 0 0 12px rgba(0, 200, 255, 0.8); transition: background 0.1s ease;
+  }
+  #cursor.selecting { background: rgba(255, 85, 51, 0.9); box-shadow: 0 0 16px rgba(255, 85, 51, 0.9); }
+
+  .panel {
+    position: absolute; inset: 0; bottom: 110px; z-index: 15;
+    display: none; align-items: center; justify-content: center;
+  }
+  .panel.visible { display: flex; }
+
+  .item-grid { display: grid; grid-template-columns: repeat(3, 160px); gap: 24px; }
+
+  .item-card {
+    width: 160px; height: 130px; border-radius: 12px;
+    background: rgba(34, 37, 43, 0.9); border: 2px solid #333;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    color: #eee; text-align: center; padding: 10px; box-sizing: border-box;
+    font-size: 14px; transition: all 0.12s ease;
+  }
+  .item-card.hovered { background: #3a4a6b; border-color: #00aaff; transform: scale(1.08); }
+  .item-card img { width: 48px; height: 48px; object-fit: contain; }
 </style>
 </head>
 <body>
@@ -115,31 +129,32 @@
   <div id="three-canvas"></div>
   <div id="css3d-container"></div>
 
-  <div id="radial-hub" class="circle-btn hand-clickable" title="Menu">☰<div id="status-dot"></div></div>
-
-  <div id="ring-main" class="radial-ring hidden">
-    <button class="circle-btn hand-clickable" data-mode="launcher" title="Launcher">🗂️</button>
-    <button class="circle-btn hand-clickable" data-mode="create" title="Criar">✏️</button>
-    <button class="circle-btn hand-clickable" data-mode="browser" title="Navegador">🌐</button>
+  <div id="tracking-badge" class="status-badge">
+    <div id="tracking-dot"></div>
+    <span>Tracking: <span id="tracking-text">OFF</span></span>
   </div>
-
-  <div id="ring-tools" class="radial-ring hidden">
-    <button class="circle-btn hand-clickable" data-tool="draw" title="Linha">✏️</button>
-    <button class="circle-btn hand-clickable" data-tool="box" title="Cubo">⬛</button>
-    <button class="circle-btn hand-clickable" data-tool="sphere" title="Esfera">⚪</button>
-    <button class="circle-btn hand-clickable" data-tool="cylinder" title="Cilindro">🥫</button>
-  </div>
-
-  <div id="color-row" class="hidden">
-    <button class="color-swatch hand-clickable" data-color="#2563eb" style="background:#2563eb"></button>
-    <button class="color-swatch hand-clickable" data-color="#111111" style="background:#111111"></button>
-    <button class="color-swatch hand-clickable" data-color="#ffffff" style="background:#ffffff"></button>
-    <button class="color-swatch hand-clickable" data-color="#22c55e" style="background:#22c55e"></button>
-    <button class="color-swatch hand-clickable" data-color="#ef4444" style="background:#ef4444"></button>
-    <button class="color-swatch hand-clickable" data-color="#eab308" style="background:#eab308"></button>
+  <div id="fps-badge" class="status-badge">
+    FPS: <span id="fps-value">--</span>
   </div>
 
   <div id="cursor"></div>
+
+  <!-- Sub-painel: ferramentas de forma paleta de cor -->
+  <div id="sub-panel">
+    <div id="shape-tools" style="display:none">
+      <button class="tool-btn hand-clickable" data-shape="box">Cubo</button>
+      <button class="tool-btn hand-clickable" data-shape="sphere">Esfera</button>
+      <button class="tool-btn hand-clickable" data-shape="cylinder">Cilindro</button>
+    </div>
+    <div id="color-row" style="display:none; gap:10px; align-items:center;">
+      <button class="color-swatch hand-clickable" data-color="#2563eb" style="background:#2563eb"></button>
+      <button class="color-swatch hand-clickable" data-color="#111111" style="background:#111111"></button>
+      <button class="color-swatch hand-clickable" data-color="#ffffff" style="background:#ffffff"></button>
+      <button class="color-swatch hand-clickable" data-color="#22c55e" style="background:#22c55e"></button>
+      <button class="color-swatch hand-clickable" data-color="#ef4444" style="background:#ef4444"></button>
+      <button class="color-swatch hand-clickable" data-color="#eab308" style="background:#eab308"></button>
+    </div>
+  </div>
 
   <div id="launcher-panel" class="panel">
     <div id="launcher-grid" class="item-grid"></div>
@@ -153,6 +168,35 @@
     </div>
     <webview id="webview" src="https://www.google.com"></webview>
   </div>
+
+  <!-- Navbar inferior -->
+  <nav id="navbar">
+    <button class="nav-item hand-clickable" data-nav="draw">
+      <img src="icons/draw.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">✏️</span>
+      <span class="label">Draw</span>
+    </button>
+    <button class="nav-item hand-clickable" data-nav="browser">
+      <img src="icons/browser.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">🌐</span>
+      <span class="label">Browser</span>
+    </button>
+    <button class="nav-item hand-clickable" data-nav="windows">
+      <img src="icons/windows.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">🪟</span>
+      <span class="label">Windows</span>
+    </button>
+    <button class="nav-item hand-clickable" data-nav="files">
+      <img src="icons/files.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">📁</span>
+      <span class="label">Files</span>
+    </button>
+    <button class="nav-item hand-clickable" data-nav="settings">
+      <img src="icons/settings.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">⚙️</span>
+      <span class="label">Settings</span>
+    </button>
+  </nav>
 
   <script type="importmap">
   {

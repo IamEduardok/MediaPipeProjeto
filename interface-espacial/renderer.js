@@ -1,12 +1,16 @@
 import * as THREE from "three";
 import { CSS3DRenderer, CSS3DObject } from "three/addons/renderers/CSS3DRenderer.js";
 
-const statusDot = document.getElementById("status-dot");
+const trackingDot = document.getElementById("tracking-dot");
+const trackingText = document.getElementById("tracking-text");
+const fpsValue = document.getElementById("fps-value");
 const cursorEl = document.getElementById("cursor");
-const radialHub = document.getElementById("radial-hub");
-const ringMain = document.getElementById("ring-main");
-const ringTools = document.getElementById("ring-tools");
+
+const navItems = document.querySelectorAll(".nav-item");
+const subPanel = document.getElementById("sub-panel");
+const shapeTools = document.getElementById("shape-tools");
 const colorRow = document.getElementById("color-row");
+
 const launcherPanel = document.getElementById("launcher-panel");
 const launcherGridEl = document.getElementById("launcher-grid");
 const browserCardEl = document.getElementById("browser-card");
@@ -20,32 +24,11 @@ const drawCtx = drawCanvas.getContext("2d");
 const threeCanvasContainer = document.getElementById("three-canvas");
 const css3dContainer = document.getElementById("css3d-container");
 
-// --------------------------------------------------------------------
-// Layout dos anéis (posiciona os botões em arco ao redor do hub)
-// --------------------------------------------------------------------
-function layoutRing(ringEl, radius, startDeg, endDeg) {
-  const items = ringEl.querySelectorAll(".circle-btn");
-  const n = items.length;
-  items.forEach((el, i) => {
-    const t = n === 1 ? 0 : i / (n - 1);
-    const deg = startDeg + (endDeg - startDeg) * t;
-    const rad = (deg * Math.PI) / 180;
-    const x = Math.cos(rad) * radius;
-    const y = Math.sin(rad) * radius;
-    el.style.left = `${x - 28}px`;
-    el.style.top = `${y - 28}px`;
-  });
-}
-layoutRing(ringMain, 100, 190, 350);
-layoutRing(ringTools, 110, 200, 340);
 
-// --------------------------------------------------------------------
-// Estado
-// --------------------------------------------------------------------
-let mode = "launcher";   // "launcher" | "create" | "browser"
-let tool = "draw";       // "draw" | "box" | "sphere" | "cylinder"
+// Estado — nav ativo: "draw" | "browser" | "windows" | "files" | "settings"
+
+let activeNav = "draw";
 let currentColor = "#2563eb";
-let radialOpen = false;
 let isPinching = false;
 let isDrawing = false;
 let lastPoint = null;
@@ -56,69 +39,42 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-// "Objeto flutuante ativo": pode ser uma forma 3D (Mesh) ou o card do
-// navegador (CSS3DObject) — os dois têm position/rotation/scale, então a
-// mesma lógica de arrastar/girar/redimensionar serve pra qualquer um.
 function getActiveObject() {
-  if (mode === "create" && tool !== "draw") return currentShape;
-  if (mode === "browser") return browserObject;
+  if (activeNav === "windows") return currentShape;
+  if (activeNav === "browser") return browserObject;
   return null;
 }
 
 function getActiveBaseScale() {
-  return mode === "browser" ? BROWSER_BASE_SCALE : 1;
+  return activeNav === "browser" ? BROWSER_BASE_SCALE : 1;
 }
 
 function updateThreeVisibility() {
-  threeCanvasContainer.classList.toggle("visible", mode === "create" && tool !== "draw" && currentShape !== null);
-  css3dContainer.classList.toggle("visible", mode === "browser");
+  threeCanvasContainer.classList.toggle("visible", activeNav === "windows" && currentShape !== null);
+  css3dContainer.classList.toggle("visible", activeNav === "browser");
 }
 
-function setMode(newMode) {
-  mode = newMode;
-  radialOpen = false;
-  ringMain.classList.add("hidden");
-  launcherPanel.classList.toggle("visible", mode === "launcher");
-  ringTools.classList.toggle("hidden", mode !== "create");
-  colorRow.classList.toggle("hidden", mode !== "create");
+function setActiveNav(nav) {
+  activeNav = nav;
+  navItems.forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === nav));
+
+  launcherPanel.classList.toggle("visible", nav === "files");
   updateThreeVisibility();
   stopDrawing();
+  dragLastNorm = null;
+
+  const showSub = nav === "windows" || nav === "settings";
+  subPanel.classList.toggle("visible", showSub);
+  shapeTools.style.display = nav === "windows" ? "flex" : "none";
+  colorRow.style.display = nav === "settings" ? "flex" : "none";
+
+  if (nav === "windows" && !currentShape) rebuildShape("box");
 }
 
-function setTool(newTool) {
-  tool = newTool;
-  ringTools.querySelectorAll(".circle-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.tool === tool));
-  if (tool !== "draw" && currentShapeType !== tool) rebuildShape(tool);
-  updateThreeVisibility();
-}
+navItems.forEach((btn) => btn.addEventListener("click", () => setActiveNav(btn.dataset.nav)));
 
-function normalizeUrl(value) {
-  const trimmed = value.trim();
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (trimmed.includes(".") && !trimmed.includes(" ")) return `https://${trimmed}`;
-  return `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`;
-}
-
-function navigateBrowser() {
-  webview.src = normalizeUrl(browserUrl.value);
-}
-
-browserGo.addEventListener("click", navigateBrowser);
-browserUrl.addEventListener("keydown", (e) => { if (e.key === "Enter") navigateBrowser(); });
-browserBack.addEventListener("click", () => { if (webview.canGoBack()) webview.goBack(); });
-webview.addEventListener("did-navigate", () => { browserUrl.value = webview.src; });
-
-radialHub.addEventListener("click", () => {
-  radialOpen = !radialOpen;
-  ringMain.classList.toggle("hidden", !radialOpen);
-});
-
-ringMain.querySelectorAll(".circle-btn").forEach((btn) => {
-  btn.addEventListener("click", () => setMode(btn.dataset.mode));
-});
-
-ringTools.querySelectorAll(".circle-btn").forEach((btn) => {
-  btn.addEventListener("click", () => setTool(btn.dataset.tool));
+shapeTools.querySelectorAll(".tool-btn").forEach((btn) => {
+  btn.addEventListener("click", () => rebuildShape(btn.dataset.shape));
 });
 
 colorRow.querySelectorAll(".color-swatch").forEach((btn) => {
@@ -130,9 +86,9 @@ colorRow.querySelectorAll(".color-swatch").forEach((btn) => {
   });
 });
 
-// --------------------------------------------------------------------
+
 // Canvas de desenho
-// --------------------------------------------------------------------
+
 function resizeCanvas() {
   drawCanvas.width = window.innerWidth;
   drawCanvas.height = window.innerHeight;
@@ -157,9 +113,9 @@ function drawTo(x, y) {
   lastPoint = { x, y };
 }
 
-// --------------------------------------------------------------------
-// Cena 3D (WebGL) — formas geométricas
-// --------------------------------------------------------------------
+
+// Cena 3D (WebGL) — formas geométricas (modo "Windows")
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.z = 4;
@@ -179,6 +135,7 @@ let currentShape = null;
 let currentShapeType = null;
 
 function rebuildShape(shapeType) {
+  if (currentShapeType === shapeType) return;
   const previousScale = currentShape ? currentShape.scale.x : 1;
   if (currentShape) scene.remove(currentShape);
 
@@ -188,22 +145,21 @@ function rebuildShape(shapeType) {
   currentShape.scale.setScalar(previousScale);
   scene.add(currentShape);
   currentShapeType = shapeType;
+
+  shapeTools.querySelectorAll(".tool-btn").forEach((b) => b.classList.toggle("active", b.dataset.shape === shapeType));
+  updateThreeVisibility();
 }
 
-// --------------------------------------------------------------------
-// Cena CSS3D — o card do navegador como objeto 3D "de verdade" (o DOM
-// real do webview é transformado em 3D via CSS, continua clicável)
-// --------------------------------------------------------------------
+// Cena CSS3D — navegador flutuante (modo "Browser")
+
 const cssScene = new THREE.Scene();
 const cssRenderer = new CSS3DRenderer();
 cssRenderer.setSize(window.innerWidth, window.innerHeight);
 css3dContainer.appendChild(cssRenderer.domElement);
 
-// O card tem 800x520px reais; essa escala converte pixels de CSS em
-// unidades da nossa cena (pequena, câmera a 4 unidades de distância).
 const BROWSER_BASE_SCALE = 0.0032;
 
-browserCardEl.style.display = "flex"; // volta a ficar visível (controlado pelo container, não por ele mesmo)
+browserCardEl.style.display = "flex";
 const browserObject = new CSS3DObject(browserCardEl);
 browserObject.scale.setScalar(BROWSER_BASE_SCALE);
 cssScene.add(browserObject);
@@ -215,16 +171,43 @@ window.addEventListener("resize", () => {
   cssRenderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+function normalizeUrl(value) {
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.includes(".") && !trimmed.includes(" ")) return `https://${trimmed}`;
+  return `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`;
+}
+function navigateBrowser() { webview.src = normalizeUrl(browserUrl.value); }
+
+browserGo.addEventListener("click", navigateBrowser);
+browserUrl.addEventListener("keydown", (e) => { if (e.key === "Enter") navigateBrowser(); });
+browserBack.addEventListener("click", () => { if (webview.canGoBack()) webview.goBack(); });
+webview.addEventListener("did-navigate", () => { browserUrl.value = webview.src; });
+
+
+// Loop de render + contador de FPS real
+
+let frameCount = 0;
+let lastFpsUpdate = performance.now();
+
 function animate() {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
   cssRenderer.render(cssScene, camera);
+
+  frameCount++;
+  const now = performance.now();
+  if (now - lastFpsUpdate >= 1000) {
+    fpsValue.textContent = frameCount;
+    frameCount = 0;
+    lastFpsUpdate = now;
+  }
 }
 animate();
 
-// --------------------------------------------------------------------
-// Launcher — cards com ícone (imagem) e fallback pro nome em texto
-// --------------------------------------------------------------------
+
+// Launcher (modo "Files")
+
 let launcherItems = [];
 
 async function loadLauncherItems() {
@@ -249,7 +232,6 @@ async function loadLauncherItems() {
     launcherGridEl.appendChild(el);
   }
 }
-
 function makeLabel(text) {
   const span = document.createElement("span");
   span.textContent = text;
@@ -257,10 +239,10 @@ function makeLabel(text) {
 }
 loadLauncherItems();
 
-// --------------------------------------------------------------------
+
 // Interação por gesto: hover + Pinca (uma mão) "clica" em QUALQUER
 // elemento .hand-clickable visível na tela.
-// --------------------------------------------------------------------
+
 function updateHoveredClickable(clientX, clientY) {
   const elements = document.querySelectorAll(".hand-clickable");
   let found = null;
@@ -279,15 +261,19 @@ function updateHoveredClickable(clientX, clientY) {
   return found;
 }
 
-// --------------------------------------------------------------------
+
 // Bridge WebSocket
-// --------------------------------------------------------------------
+
 function connect() {
   const ws = new WebSocket("ws://localhost:8765");
 
-  ws.onopen = () => statusDot.classList.add("online");
+  ws.onopen = () => {
+    trackingDot.classList.add("online");
+    trackingText.textContent = "ON";
+  };
   ws.onclose = () => {
-    statusDot.classList.remove("online");
+    trackingDot.classList.remove("online");
+    trackingText.textContent = "OFF";
     setTimeout(connect, 1500);
   };
   ws.onerror = () => ws.close();
@@ -298,15 +284,12 @@ function connect() {
     if (data.type === "position") {
       handPositions[data.hand] = { x: data.x, y: data.y };
 
-      // Redimensionar com as duas mãos: distância entre elas vira a escala
-      // do objeto flutuante ativo (forma 3D ou card do navegador).
       const active = getActiveObject();
       if (active && handPositions.Left && handPositions.Right) {
         const dx = handPositions.Left.x - handPositions.Right.x;
         const dy = handPositions.Left.y - handPositions.Right.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const factor = clamp(dist * 3.2, 0.3, 3.2);
-        active.scale.setScalar(getActiveBaseScale() * factor);
+        active.scale.setScalar(getActiveBaseScale() * clamp(dist * 3.2, 0.3, 3.2));
       }
 
       if (data.hand === "Right") {
@@ -317,7 +300,7 @@ function connect() {
 
         updateHoveredClickable(x, y);
 
-        if (mode === "create" && tool === "draw" && isDrawing) {
+        if (activeNav === "draw" && isDrawing) {
           drawTo(x, y);
         } else if (active && isPinching) {
           const hoveredUi = document.querySelector(".hand-clickable.hovered");
@@ -339,27 +322,25 @@ function connect() {
     if (data.type === "gesture" && data.hand === "Right") {
       isPinching = data.gesture === "Pinca";
       cursorEl.classList.toggle("selecting", isPinching);
-
       if (!isPinching) dragLastNorm = null;
 
       if (isPinching) {
         const hovered = document.querySelector(".hand-clickable.hovered");
         if (hovered) {
           hovered.click();
-        } else if (mode === "create" && tool === "draw") {
+        } else if (activeNav === "draw") {
           startDrawing();
         }
-      } else if (mode === "create" && tool === "draw") {
+      } else if (activeNav === "draw") {
         stopDrawing();
       }
     }
 
-    if (data.type === "gesture" && data.hand === "Left" && data.gesture === "Mao aberta"
-        && mode === "create" && tool === "draw") {
+    if (data.type === "gesture" && data.hand === "Left" && data.gesture === "Mao aberta" && activeNav === "draw") {
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     }
   };
 }
 connect();
 
-setMode("launcher");
+setActiveNav("draw");
