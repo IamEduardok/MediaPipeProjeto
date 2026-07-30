@@ -13,6 +13,9 @@ const colorRow = document.getElementById("color-row");
 
 const launcherPanel = document.getElementById("launcher-panel");
 const launcherGridEl = document.getElementById("launcher-grid");
+const drawRadial = document.getElementById("draw-radial");
+const drawRadialSvg = document.getElementById("draw-radial-svg");
+const drawHub = document.getElementById("draw-hub");
 const browserCardEl = document.getElementById("browser-card");
 const browserUrl = document.getElementById("browser-url");
 const browserGo = document.getElementById("browser-go");
@@ -71,7 +74,79 @@ function setActiveNav(nav) {
   if (nav === "windows" && !currentShape) rebuildShape("box");
 }
 
-navItems.forEach((btn) => btn.addEventListener("click", () => setActiveNav(btn.dataset.nav)));
+navItems.forEach((btn) => btn.addEventListener("click", () => {
+  if (btn.dataset.nav === "draw") {
+    toggleDrawRadial();
+  } else {
+    closeDrawRadial();
+    setActiveNav(btn.dataset.nav);
+  }
+}));
+
+
+// Menu radial do Draw: hub central "DRAW" + 7 bolhas ao redor, conectadas
+// por linhas tracejadas (layout replicado de uma referência visual).
+
+const RADIAL_ACTIONS = ["pencil", "sphere", "cylinder", "paint", "pyramid", "eraser", "cube"];
+let radialOpen = false;
+
+function layoutDrawRadial() {
+  const radius = 150;
+  const n = RADIAL_ACTIONS.length;
+  const centerSvg = 260; // metade do viewBox 520x520 do svg
+
+  let linesHtml = "";
+  RADIAL_ACTIONS.forEach((action, i) => {
+    const deg = -90 + (360 / n) * i; // começa no topo, sentido horário
+    const rad = (deg * Math.PI) / 180;
+    const x = Math.cos(rad) * radius;
+    const y = Math.sin(rad) * radius;
+
+    const btn = drawRadial.querySelector(`[data-action="${action}"]`);
+    btn.style.left = `${x - 38}px`;
+    btn.style.top = `${y - 38}px`;
+
+    linesHtml += `<line x1="${centerSvg}" y1="${centerSvg}" x2="${centerSvg + x}" y2="${centerSvg + y}" />`;
+  });
+  drawRadialSvg.innerHTML = linesHtml;
+}
+layoutDrawRadial();
+
+function openDrawRadial() {
+  radialOpen = true;
+  drawRadial.classList.add("visible");
+}
+function closeDrawRadial() {
+  radialOpen = false;
+  drawRadial.classList.remove("visible");
+}
+function toggleDrawRadial() {
+  if (radialOpen) closeDrawRadial();
+  else openDrawRadial();
+}
+
+drawHub.addEventListener("click", closeDrawRadial);
+
+const RADIAL_SHAPE_MAP = { sphere: "sphere", cylinder: "cylinder", pyramid: "pyramid", cube: "box" };
+
+drawRadial.querySelectorAll(".radial-item").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const action = btn.dataset.action;
+
+    if (action === "pencil") {
+      setActiveNav("draw");
+    } else if (action === "eraser") {
+      drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    } else if (action === "paint") {
+      setActiveNav("settings"); // reaproveita o painel de cor já existente
+    } else if (RADIAL_SHAPE_MAP[action]) {
+      setActiveNav("windows");
+      rebuildShape(RADIAL_SHAPE_MAP[action]);
+    }
+
+    closeDrawRadial();
+  });
+});
 
 shapeTools.querySelectorAll(".tool-btn").forEach((btn) => {
   btn.addEventListener("click", () => rebuildShape(btn.dataset.shape));
@@ -114,7 +189,7 @@ function drawTo(x, y) {
 }
 
 
-// Cena 3D (WebGL) — formas geométricas (modo "Windows")
+// Cena 3D (WebGL)  formas geométricas (modo "Windows")
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -129,6 +204,7 @@ const SHAPE_GEOMETRIES = {
   box: () => new THREE.BoxGeometry(1, 1, 1),
   sphere: () => new THREE.SphereGeometry(0.6, 32, 32),
   cylinder: () => new THREE.CylinderGeometry(0.5, 0.5, 1.1, 32),
+  pyramid: () => new THREE.ConeGeometry(0.7, 1.2, 4), // 4 lados = pirâmide, não cone redondo
 };
 
 let currentShape = null;
@@ -149,6 +225,7 @@ function rebuildShape(shapeType) {
   shapeTools.querySelectorAll(".tool-btn").forEach((b) => b.classList.toggle("active", b.dataset.shape === shapeType));
   updateThreeVisibility();
 }
+
 
 // Cena CSS3D — navegador flutuante (modo "Browser")
 
@@ -206,7 +283,7 @@ function animate() {
 animate();
 
 
-// Launcher (modo "Files")
+// Launcher 
 
 let launcherItems = [];
 

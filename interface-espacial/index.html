@@ -2,25 +2,25 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Interface Espacial - Fase 13</title>
+<title>Interface Espacial - Fase 14</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: system-ui, sans-serif; }
-
+ 
   #camera-feed {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover; z-index: 0; opacity: 0.9;
   }
-
+ 
   #draw-canvas { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
   #three-canvas { position: absolute; inset: 0; z-index: 6; pointer-events: none; display: none; }
   #three-canvas.visible { display: block; }
-
+ 
   #css3d-container {
     position: absolute; inset: 0; z-index: 9; pointer-events: none;
     display: none; overflow: hidden;
   }
   #css3d-container.visible { display: block; }
-
+ 
   #browser-card {
     width: 800px; height: 520px;
     background: #1c1c1c; border-radius: 14px; overflow: hidden;
@@ -38,7 +38,7 @@
     background: rgba(255, 255, 255, 0.96); cursor: pointer; font-size: 15px; flex-shrink: 0;
   }
   #webview { flex: 1; width: 100%; border: none; }
-
+ 
   /* --- Badges de status, cantos superiores --- */
   .status-badge {
     position: absolute; top: 16px; z-index: 25;
@@ -53,7 +53,7 @@
     width: 8px; height: 8px; border-radius: 50%; background: #ef4444;
   }
   #tracking-dot.online { background: #22c55e; }
-
+ 
   /* --- Navbar inferior --- */
   #navbar {
     position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -71,8 +71,8 @@
   .nav-item img { width: 22px; height: 22px; object-fit: contain; }
   .nav-item .fallback-icon { font-size: 20px; line-height: 1; }
   .nav-item span.label { font-size: 11px; color: #444; }
-
-  /*  Sub-painel de ferramentas (aparece acima da navbar em certos modos)  */
+ 
+  /* --- Sub-painel de ferramentas (aparece acima da navbar em certos modos) --- */
   #sub-panel {
     position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%);
     z-index: 24; display: none; align-items: center; gap: 10px;
@@ -81,21 +81,21 @@
   }
   #sub-panel.visible { display: flex; }
   #sub-panel.hidden-content > * { display: none; }
-
+ 
   .tool-btn {
     background: #eee; color: #333; border: none;
     padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
   }
   .tool-btn.hovered { background: #ccc; }
   .tool-btn.active { background: #2563eb; color: #fff; }
-
+ 
   .color-swatch {
     width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); cursor: pointer;
   }
   .color-swatch.hovered { border-color: #999; }
   .color-swatch.active { box-shadow: 0 0 0 3px #2563eb; }
-
+ 
   #cursor {
     position: absolute; width: 18px; height: 18px; border-radius: 50%;
     background: rgba(0, 200, 255, 0.85); pointer-events: none;
@@ -103,15 +103,15 @@
     box-shadow: 0 0 12px rgba(0, 200, 255, 0.8); transition: background 0.1s ease;
   }
   #cursor.selecting { background: rgba(255, 85, 51, 0.9); box-shadow: 0 0 16px rgba(255, 85, 51, 0.9); }
-
+ 
   .panel {
     position: absolute; inset: 0; bottom: 110px; z-index: 15;
     display: none; align-items: center; justify-content: center;
   }
   .panel.visible { display: flex; }
-
+ 
   .item-grid { display: grid; grid-template-columns: repeat(3, 160px); gap: 24px; }
-
+ 
   .item-card {
     width: 160px; height: 130px; border-radius: 12px;
     background: rgba(34, 37, 43, 0.9); border: 2px solid #333;
@@ -121,6 +121,34 @@
   }
   .item-card.hovered { background: #3a4a6b; border-color: #00aaff; transform: scale(1.08); }
   .item-card img { width: 48px; height: 48px; object-fit: contain; }
+ 
+  /* --- Menu radial do Draw --- */
+  #draw-radial {
+    position: absolute; top: 50%; left: 50%; width: 0; height: 0;
+    z-index: 28; display: none;
+  }
+  #draw-radial.visible { display: block; }
+ 
+  #draw-radial-svg { position: absolute; top: -260px; left: -260px; width: 520px; height: 520px; overflow: visible; }
+  #draw-radial-svg line { stroke: #999; stroke-width: 1.5; stroke-dasharray: 4 5; }
+ 
+  .hub-circle {
+    position: absolute; width: 140px; height: 140px; left: -70px; top: -70px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, #cfcfcf, #a3a3a3 70%, #8a8a8a);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 1px 3px rgba(255, 255, 255, 0.6);
+    color: #fff; font-weight: 600; letter-spacing: 4px; font-size: 15px; cursor: pointer;
+  }
+ 
+  .radial-item {
+    position: absolute; width: 76px; height: 76px; border-radius: 50%; border: none;
+    background: radial-gradient(circle at 35% 30%, #ffffff, #dcdcdc 70%, #c4c4c4);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .radial-item.hovered { box-shadow: 0 0 0 3px #ff5533, 0 6px 16px rgba(0, 0, 0, 0.25); }
+  .radial-item img { width: 28px; height: 28px; object-fit: contain; }
+  .radial-item .fallback-icon { font-size: 24px; }
 </style>
 </head>
 <body>
@@ -138,6 +166,41 @@
   </div>
 
   <div id="cursor"></div>
+
+
+  <!-- Menu radial do Draw  hub central + 7 bolhas ao redor -->
+  <div id="draw-radial">
+    <svg id="draw-radial-svg"></svg>
+    <div id="draw-hub" class="hub-circle hand-clickable">DRAW</div>
+    <button class="radial-item hand-clickable" data-action="pencil">
+      <img src="icons/pencil.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">✏️</span>
+    </button>
+    <button class="radial-item hand-clickable" data-action="sphere">
+      <img src="icons/sphere.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">⚪</span>
+    </button>
+    <button class="radial-item hand-clickable" data-action="cylinder">
+      <img src="icons/cylinder.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">🥫</span>
+    </button>
+    <button class="radial-item hand-clickable" data-action="paint">
+      <img src="icons/paint.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">🎨</span>
+    </button>
+    <button class="radial-item hand-clickable" data-action="pyramid">
+      <img src="icons/pyramid.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">🔺</span>
+    </button>
+    <button class="radial-item hand-clickable" data-action="eraser">
+      <img src="icons/eraser.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">🧹</span>
+    </button>
+    <button class="radial-item hand-clickable" data-action="cube">
+      <img src="icons/cube.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="fallback-icon" style="display:none">⬛</span>
+    </button>
+  </div>
 
   <!-- Sub-painel: ferramentas de forma paleta de cor -->
   <div id="sub-panel">
