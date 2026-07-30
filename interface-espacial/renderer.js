@@ -43,8 +43,13 @@ function clamp(value, min, max) {
 }
 
 function getActiveObject() {
-  if (activeNav === "windows") return currentShape;
-  if (activeNav === "browser") return browserObject;
+
+  if (currentShape)
+      return currentShape;
+
+  if (activeNav === "browser")
+      return browserObject;
+
   return null;
 }
 
@@ -53,8 +58,17 @@ function getActiveBaseScale() {
 }
 
 function updateThreeVisibility() {
-  threeCanvasContainer.classList.toggle("visible", activeNav === "windows" && currentShape !== null);
-  css3dContainer.classList.toggle("visible", activeNav === "browser");
+
+  threeCanvasContainer.classList.toggle(
+      "visible",
+      currentShape !== null
+  );
+
+  css3dContainer.classList.toggle(
+      "visible",
+      activeNav === "browser"
+  );
+
 }
 
 function setActiveNav(nav) {
@@ -75,12 +89,32 @@ function setActiveNav(nav) {
 }
 
 navItems.forEach((btn) => btn.addEventListener("click", () => {
-  if (btn.dataset.nav === "draw") {
-    toggleDrawRadial();
-  } else {
-    closeDrawRadial();
-    setActiveNav(btn.dataset.nav);
+
+  switch (btn.dataset.nav) {
+
+    case "draw":
+      toggleDrawRadial();
+      break;
+
+    case "browser":
+      closeDrawRadial();
+      setActiveNav("browser");
+      break;
+
+    case "files":
+      closeDrawRadial();
+      setActiveNav("files");
+      break;
+
+    case "windows":
+      console.log("Windows ainda não implementado.");
+      break;
+
+    case "settings":
+      console.log("Settings ainda não implementado.");
+      break;
   }
+
 }));
 
 
@@ -137,19 +171,39 @@ drawRadial.querySelectorAll(".radial-item").forEach((btn) => {
       setActiveNav("draw");
     } else if (action === "eraser") {
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-    } else if (action === "paint") {
-      setActiveNav("settings"); // reaproveita o painel de cor já existente
-    } else if (RADIAL_SHAPE_MAP[action]) {
-      setActiveNav("windows");
-      rebuildShape(RADIAL_SHAPE_MAP[action]);
-    }
+   } else if (action === "paint") {
+
+    subPanel.classList.add("visible");
+    shapeTools.style.display = "none";
+    colorRow.style.display = "flex";
+
+} else if (RADIAL_SHAPE_MAP[action]) {
+
+    rebuildShape(RADIAL_SHAPE_MAP[action]);
+
+    subPanel.classList.add("visible");
+    shapeTools.style.display = "none";
+    colorRow.style.display = "none";
+
+    threeCanvasContainer.classList.add("visible");
+
+}
 
     closeDrawRadial();
   });
 });
 
 shapeTools.querySelectorAll(".tool-btn").forEach((btn) => {
-  btn.addEventListener("click", () => rebuildShape(btn.dataset.shape));
+  btn.addEventListener("click", () => {
+
+    rebuildShape(btn.dataset.shape);
+
+    // Esconde o painel de ferramentas
+    subPanel.classList.remove("visible");
+    shapeTools.style.display = "none";
+    colorRow.style.display = "none";
+
+  });
 });
 
 colorRow.querySelectorAll(".color-swatch").forEach((btn) => {
