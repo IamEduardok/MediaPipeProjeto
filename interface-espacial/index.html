@@ -130,24 +130,122 @@
   #draw-radial.visible { display: block; }
  
   #draw-radial-svg { position: absolute; top: -260px; left: -260px; width: 520px; height: 520px; overflow: visible; }
-  #draw-radial-svg line { stroke: #999; stroke-width: 1.5; stroke-dasharray: 4 5; }
+  #draw-radial-svg line{
+
+    stroke:rgba(0,0,0,.35);
+
+    stroke-width:1.4;
+
+    stroke-dasharray:5 6;
+}
  
   .hub-circle {
-    position: absolute; width: 140px; height: 140px; left: -70px; top: -70px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(circle at 35% 30%, #cfcfcf, #a3a3a3 70%, #8a8a8a);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 1px 3px rgba(255, 255, 255, 0.6);
-    color: #fff; font-weight: 600; letter-spacing: 4px; font-size: 15px; cursor: pointer;
-  }
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  left: -70px;
+  top: -70px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: rgba(255,255,255,.95);
+  font-weight: 600;
+  letter-spacing: 4px;
+  font-size: 15px;
+
+  cursor: pointer;
+
+  background:
+      linear-gradient(
+          180deg,
+          rgba(255,255,255,.42),
+          rgba(255,255,255,.12)
+      );
+
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+
+  border: 1px solid rgba(255,255,255,.35);
+
+  box-shadow:
+      0 20px 60px rgba(0,0,0,.18),
+      inset 0 2px 2px rgba(255,255,255,.45),
+      inset 0 -12px 30px rgba(255,255,255,.08);
+}
+.hub-circle::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:-60px;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.35);
+
+    filter:blur(45px);
+
+    z-index:-1;
+}
  
-  .radial-item {
-    position: absolute; width: 76px; height: 76px; border-radius: 50%; border: none;
-    background: radial-gradient(circle at 35% 30%, #ffffff, #dcdcdc 70%, #c4c4c4);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.8);
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-  }
-  .radial-item.hovered { box-shadow: 0 0 0 3px #ff5533, 0 6px 16px rgba(0, 0, 0, 0.25); }
-  .radial-item img { width: 28px; height: 28px; object-fit: contain; }
+ .radial-item {
+
+    position:absolute;
+
+    width:76px;
+    height:76px;
+
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.45);
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.38),
+            rgba(255,255,255,.12)
+        );
+
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+
+    box-shadow:
+        0 12px 35px rgba(0,0,0,.15),
+        inset 0 2px 2px rgba(255,255,255,.55);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    transition:.25s;
+}
+  .radial-item:hover,
+.radial-item.hovered{
+
+    transform:scale(1.08);
+
+    border-color:rgba(255,255,255,.65);
+
+    box-shadow:
+        0 0 25px rgba(255,255,255,.35),
+        0 15px 45px rgba(0,0,0,.18);
+
+}
+  .radial-item img{
+
+    width:30px;
+    height:30px;
+
+    opacity:.92;
+
+    filter:
+        drop-shadow(0 1px 2px rgba(255,255,255,.35));
+}
+
   .radial-item .fallback-icon { font-size: 24px; }
 </style>
 </head>

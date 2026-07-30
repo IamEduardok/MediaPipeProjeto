@@ -88,61 +88,243 @@ function setActiveNav(nav) {
   if (nav === "windows" && !currentShape) rebuildShape("box");
 }
 
-navItems.forEach((btn) => btn.addEventListener("click", () => {
-
-  switch (btn.dataset.nav) {
-
-    case "draw":
-      toggleDrawRadial();
-      break;
-
-    case "browser":
-      closeDrawRadial();
-      setActiveNav("browser");
-      break;
-
-    case "files":
-      closeDrawRadial();
-      setActiveNav("files");
-      break;
-
-    case "windows":
-      console.log("Windows ainda não implementado.");
-      break;
-
-    case "settings":
-      console.log("Settings ainda não implementado.");
-      break;
-  }
-
-}));
+navItems.forEach((btn)=>{
 
 
-// Menu radial do Draw: hub central "DRAW" + 7 bolhas ao redor, conectadas
+btn.addEventListener("click",()=>{
+
+
+switch(btn.dataset.nav){
+
+
+case "draw":
+
+    loadRadialMenu("draw");
+
+    toggleDrawRadial();
+
+break;
+
+
+
+case "windows":
+
+    loadRadialMenu("windows");
+
+    toggleDrawRadial();
+
+break;
+
+
+
+case "files":
+
+    loadRadialMenu("files");
+
+    toggleDrawRadial();
+
+break;
+
+
+
+case "browser":
+
+    closeDrawRadial();
+
+    setActiveNav("browser");
+
+break;
+
+
+
+case "settings":
+
+    console.log("Settings future implementation");
+
+break;
+
+
+}
+
+
+
+});
+
+
+});
+
+
+// Menu radial de todos os menus expandidos
 // por linhas tracejadas (layout replicado de uma referência visual).
 
-const RADIAL_ACTIONS = ["pencil", "sphere", "cylinder", "paint", "pyramid", "eraser", "cube"];
+const RADIAL_MENUS = {
+
+    draw: {
+        title: "DRAW",
+        items: [
+            { icon: "pencil", action: "pencil" },
+            { icon: "sphere", action: "sphere" },
+            { icon: "cylinder", action: "cylinder" },
+            { icon: "paint", action: "paint" },
+            { icon: "pyramid", action: "pyramid" },
+            { icon: "eraser", action: "eraser" },
+            { icon: "cube", action: "cube" }
+        ]
+    },
+
+
+    windows: {
+        title: "WINDOWS",
+        items: [
+            { icon: "notes", action: "notes" },
+            { icon: "folder", action: "folder" },
+            { icon: "calculator", action: "calculator" },
+            { icon: "settings", action: "settings" }
+        ]
+    },
+
+
+    files: {
+        title: "FILES",
+        items: [
+            { icon: "recent", action: "recent" },
+            { icon: "documents", action: "documents" },
+            { icon: "images", action: "images" },
+            { icon: "downloads", action: "downloads" },
+            { icon: "folder", action: "folder" }
+        ]
+    }
+
+};
+
+
+let currentRadial = "draw";
+const RADIAL_LAYOUTS = {
+
+
+    seven:[
+
+        {x:0,y:-150},
+        {x:110,y:-100},
+        {x:150,y:15},
+        {x:90,y:120},
+        {x:-90,y:120},
+        {x:-150,y:15},
+        {x:-110,y:-100}
+
+    ],
+
+
+
+    five:[
+
+        {x:0,y:-160},
+        {x:150,y:-50},
+        {x:90,y:130},
+        {x:-90,y:130},
+        {x:-150,y:-50}
+
+    ],
+
+
+
+    four:[
+
+        {x:-140,y:-140},
+        {x:140,y:-140},
+        {x:140,y:140},
+        {x:-140,y:140}
+
+    ]
+
+};
 let radialOpen = false;
 
-function layoutDrawRadial() {
-  const radius = 150;
-  const n = RADIAL_ACTIONS.length;
-  const centerSvg = 260; // metade do viewBox 520x520 do svg
+function layoutDrawRadial(){
 
-  let linesHtml = "";
-  RADIAL_ACTIONS.forEach((action, i) => {
-    const deg = -90 + (360 / n) * i; // começa no topo, sentido horário
-    const rad = (deg * Math.PI) / 180;
-    const x = Math.cos(rad) * radius;
-    const y = Math.sin(rad) * radius;
 
-    const btn = drawRadial.querySelector(`[data-action="${action}"]`);
-    btn.style.left = `${x - 38}px`;
-    btn.style.top = `${y - 38}px`;
+    const menu = RADIAL_MENUS[currentRadial];
 
-    linesHtml += `<line x1="${centerSvg}" y1="${centerSvg}" x2="${centerSvg + x}" y2="${centerSvg + y}" />`;
-  });
-  drawRadialSvg.innerHTML = linesHtml;
+    drawHub.textContent = menu.title;
+
+
+    const buttons = drawRadial.querySelectorAll(".radial-item");
+
+
+    buttons.forEach(btn=>{
+        btn.style.display="none";
+    });
+
+
+
+    let layout;
+
+
+    if(menu.items.length === 7)
+        layout = RADIAL_LAYOUTS.seven;
+
+
+    else if(menu.items.length === 5)
+        layout = RADIAL_LAYOUTS.five;
+
+
+    else if(menu.items.length === 4)
+        layout = RADIAL_LAYOUTS.four;
+
+
+    else
+        layout = RADIAL_LAYOUTS.seven;
+
+
+
+    drawRadialSvg.innerHTML="";
+
+
+
+    menu.items.forEach((item,index)=>{
+
+
+        const btn = buttons[index];
+
+        const pos = layout[index];
+
+
+        btn.style.display="flex";
+
+        btn.style.left = `${pos.x-38}px`;
+
+        btn.style.top = `${pos.y-38}px`;
+
+        btn.dataset.action = item.action;
+
+
+
+        const img = btn.querySelector("img");
+
+        img.src = `icons/${item.icon}.png`;
+
+
+
+        drawRadialSvg.innerHTML += `
+
+        <line
+
+        x1="260"
+
+        y1="260"
+
+        x2="${260+pos.x}"
+
+        y2="${260+pos.y}"
+
+        />
+
+        `;
+
+
+    });
+
+
 }
 layoutDrawRadial();
 
@@ -158,39 +340,170 @@ function toggleDrawRadial() {
   if (radialOpen) closeDrawRadial();
   else openDrawRadial();
 }
+function loadRadialMenu(menuName){
+
+    currentRadial = menuName;
+
+    layoutDrawRadial();
+
+}
 
 drawHub.addEventListener("click", closeDrawRadial);
 
 const RADIAL_SHAPE_MAP = { sphere: "sphere", cylinder: "cylinder", pyramid: "pyramid", cube: "box" };
 
-drawRadial.querySelectorAll(".radial-item").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const action = btn.dataset.action;
+drawRadial.querySelectorAll(".radial-item").forEach((btn)=>{
 
-    if (action === "pencil") {
-      setActiveNav("draw");
-    } else if (action === "eraser") {
-      drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-   } else if (action === "paint") {
+
+btn.onclick=()=>{
+
+
+const action = btn.dataset.action;
+
+
+
+switch(action){
+
+
+
+// DRAW
+
+case "pencil":
+
+    setActiveNav("draw");
+
+break;
+
+
+
+case "eraser":
+
+    drawCtx.clearRect(
+        0,
+        0,
+        drawCanvas.width,
+        drawCanvas.height
+    );
+
+break;
+
+
+
+case "paint":
 
     subPanel.classList.add("visible");
-    shapeTools.style.display = "none";
-    colorRow.style.display = "flex";
 
-} else if (RADIAL_SHAPE_MAP[action]) {
+    colorRow.style.display="flex";
 
-    rebuildShape(RADIAL_SHAPE_MAP[action]);
+    shapeTools.style.display="none";
 
-    subPanel.classList.add("visible");
-    shapeTools.style.display = "none";
-    colorRow.style.display = "none";
+break;
 
-    threeCanvasContainer.classList.add("visible");
+
+
+case "cube":
+
+    rebuildShape("box");
+
+break;
+
+
+
+case "sphere":
+
+    rebuildShape("sphere");
+
+break;
+
+
+
+case "cylinder":
+
+    rebuildShape("cylinder");
+
+break;
+
+
+
+case "pyramid":
+
+    rebuildShape("pyramid");
+
+break;
+
+
+
+// WINDOWS
+
+case "notes":
+
+console.log("Notes");
+
+break;
+
+
+case "folder":
+
+console.log("Folder");
+
+break;
+
+
+case "calculator":
+
+console.log("Calculator");
+
+break;
+
+
+case "settings":
+
+console.log("Settings");
+
+break;
+
+
+
+// FILES
+
+case "recent":
+
+console.log("Recent");
+
+break;
+
+
+case "documents":
+
+console.log("Documents");
+
+break;
+
+
+case "images":
+
+console.log("Images");
+
+break;
+
+
+case "downloads":
+
+console.log("Downloads");
+
+break;
+
 
 }
 
-    closeDrawRadial();
-  });
+
+
+closeDrawRadial();
+
+
+};
+
+
 });
 
 shapeTools.querySelectorAll(".tool-btn").forEach((btn) => {
