@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { CSS3DRenderer, CSS3DObject } from "three/addons/renderers/CSS3DRenderer.js";
+import { UIManager } from "./uiManager.js";
 
 const trackingDot = document.getElementById("tracking-dot");
 const trackingText = document.getElementById("tracking-text");
@@ -30,7 +31,6 @@ const css3dContainer = document.getElementById("css3d-container");
 
 // Estado — nav ativo: "draw" | "browser" | "windows" | "files" | "settings"
 
-let activeNav = "draw";
 let currentColor = "#2563eb";
 let isPinching = false;
 let isDrawing = false;
@@ -44,114 +44,35 @@ function clamp(value, min, max) {
 
 function getActiveObject() {
 
-  if (currentShape)
+  if (ui.activeNav === "draw" && currentShape)
       return currentShape;
 
-  if (activeNav === "browser")
+  if (ui.activeNav === "browser")
       return browserObject;
 
   return null;
 }
 
 function getActiveBaseScale() {
-  return activeNav === "browser" ? BROWSER_BASE_SCALE : 1;
+  return ui.activeNav === "browser" ? BROWSER_BASE_SCALE : 1;
 }
 
 function updateThreeVisibility() {
 
   threeCanvasContainer.classList.toggle(
       "visible",
-      currentShape !== null
+      ui.activeNav === "draw" && currentShape !== null
   );
 
   css3dContainer.classList.toggle(
       "visible",
-      activeNav === "browser"
+      ui.activeNav === "browser"
   );
-
+  if (currentShape) currentShape.visible = ui.activeNav === "draw";
+  if (typeof browserObject !== "undefined") {
+    browserObject.visible = ui.activeNav === "browser";
+  }
 }
-
-function setActiveNav(nav) {
-  activeNav = nav;
-  navItems.forEach((btn) => btn.classList.toggle("active", btn.dataset.nav === nav));
-
-  launcherPanel.classList.toggle("visible", nav === "files");
-  updateThreeVisibility();
-  stopDrawing();
-  dragLastNorm = null;
-
-  const showSub = nav === "windows" || nav === "settings";
-  subPanel.classList.toggle("visible", showSub);
-  shapeTools.style.display = nav === "windows" ? "flex" : "none";
-  colorRow.style.display = nav === "settings" ? "flex" : "none";
-
-  if (nav === "windows" && !currentShape) rebuildShape("box");
-}
-
-navItems.forEach((btn)=>{
-
-
-btn.addEventListener("click",()=>{
-
-
-switch(btn.dataset.nav){
-
-
-case "draw":
-
-    loadRadialMenu("draw");
-
-    toggleDrawRadial();
-
-break;
-
-
-
-case "windows":
-
-    loadRadialMenu("windows");
-
-    toggleDrawRadial();
-
-break;
-
-
-
-case "files":
-
-    loadRadialMenu("files");
-
-    toggleDrawRadial();
-
-break;
-
-
-
-case "browser":
-
-    closeDrawRadial();
-
-    setActiveNav("browser");
-
-break;
-
-
-
-case "settings":
-
-    console.log("Settings future implementation");
-
-break;
-
-
-}
-
-
-
-});
-
-
-});
 
 
 // Menu radial de todos os menus expandidos
@@ -336,10 +257,6 @@ function closeDrawRadial() {
   radialOpen = false;
   drawRadial.classList.remove("visible");
 }
-function toggleDrawRadial() {
-  if (radialOpen) closeDrawRadial();
-  else openDrawRadial();
-}
 function loadRadialMenu(menuName){
 
     currentRadial = menuName;
@@ -370,7 +287,7 @@ switch(action){
 
 case "pencil":
 
-    setActiveNav("draw");
+    ui.open("draw");
 
 break;
 
@@ -571,7 +488,7 @@ const SHAPE_GEOMETRIES = {
   box: () => new THREE.BoxGeometry(1, 1, 1),
   sphere: () => new THREE.SphereGeometry(0.6, 32, 32),
   cylinder: () => new THREE.CylinderGeometry(0.5, 0.5, 1.1, 32),
-  pyramid: () => new THREE.ConeGeometry(0.7, 1.2, 4), // 4 lados = pirâmide, não cone redondo
+  pyramid: () => new THREE.ConeGeometry(0.7, 1.2, 4), 
 };
 
 let currentShape = null;
@@ -607,6 +524,27 @@ browserCardEl.style.display = "flex";
 const browserObject = new CSS3DObject(browserCardEl);
 browserObject.scale.setScalar(BROWSER_BASE_SCALE);
 cssScene.add(browserObject);
+
+const ui = new UIManager({
+  navItems,
+  subPanel,
+  shapeTools,
+  colorRow,
+  launcherPanel,
+  css3dContainer,
+  threeCanvasContainer,
+  openRadial: openDrawRadial,
+  closeRadial: closeDrawRadial,
+  loadRadialMenu,
+  stopDrawing,
+  resetDrag: () => { dragLastNorm = null; },
+  ensureDefaultShape: () => {
+    if (!currentShape) rebuildShape("box");
+  },
+  syncVisibility: updateThreeVisibility,
+});
+
+ui.bindNavigation();
 
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -744,7 +682,7 @@ function connect() {
 
         updateHoveredClickable(x, y);
 
-        if (activeNav === "draw" && isDrawing) {
+        if (ui.activeNav === "draw" && isDrawing) {
           drawTo(x, y);
         } else if (active && isPinching) {
           const hoveredUi = document.querySelector(".hand-clickable.hovered");
@@ -772,19 +710,19 @@ function connect() {
         const hovered = document.querySelector(".hand-clickable.hovered");
         if (hovered) {
           hovered.click();
-        } else if (activeNav === "draw") {
+        } else if (ui.activeNav === "draw") {
           startDrawing();
         }
-      } else if (activeNav === "draw") {
+      } else if (ui.activeNav === "draw") {
         stopDrawing();
       }
     }
 
-    if (data.type === "gesture" && data.hand === "Left" && data.gesture === "Mao aberta" && activeNav === "draw") {
+    if (data.type === "gesture" && data.hand === "Left" && data.gesture === "Mao aberta" && ui.activeNav === "draw") {
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     }
   };
 }
 connect();
 
-setActiveNav("draw");
+ui.open("draw");

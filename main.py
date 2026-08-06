@@ -1,16 +1,3 @@
-"""
-Fase 8 — Streaming MJPEG da câmera.
-
-Além do WebSocket de gestos (porta 8765), agora também sobe um servidor
-HTTP simples (porta 8766) que publica o frame da câmera em MJPEG, pra
-Electron mostrar como fundo em vez de uma tela preta.
-
-Rodar:
-    python main.py
-
-Pressione 'q' na janela de vídeo local para sair.
-"""
-
 import json
 import os
 import threading
